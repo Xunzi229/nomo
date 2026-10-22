@@ -15,6 +15,7 @@ jobs:
   deploy:
     name: Trigger download site deployments
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'nomo-md/nomo' }}
 
     steps:
       - name: Trigger Pages deployment
