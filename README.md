@@ -103,6 +103,8 @@ bash scripts/build-linux.sh
 
 安装包生成在 `src-tauri/target/release/bundle/`。推送与应用版本一致的 `vX.Y.Z` 标签会触发 [Release 工作流](.github/workflows/release.yml)，远程构建 Windows x64、macOS arm64 和 Linux x64 安装包，并发布 `checksums.md5` 校验清单。
 
+若标签未自动触发，可手动运行 `gh workflow run release.yml --ref vX.Y.Z`；手动发布同样必须选择版本标签。
+
 ## 参与项目
 
 欢迎提交 [Issue](https://github.com/nomo-md/nomo/issues) 或 [Pull Request](https://github.com/nomo-md/nomo/pulls)；反馈问题时请附系统版本、复现步骤与样例。

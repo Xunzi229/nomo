@@ -103,6 +103,8 @@ bash scripts/build-linux.sh
 
 Packages are written to `src-tauri/target/release/bundle/`. Pushing a `vX.Y.Z` tag that matches the app version triggers the [Release workflow](.github/workflows/release.yml), which builds Windows x64, macOS arm64 and Linux x64 packages remotely and publishes a `checksums.md5` manifest.
 
+If the tag does not trigger a run automatically, use `gh workflow run release.yml --ref vX.Y.Z`. Manual releases must also select a version tag.
+
 ## Get Involved
 
 [Issues](https://github.com/nomo-md/nomo/issues) and [pull requests](https://github.com/nomo-md/nomo/pulls) are welcome; include your OS version, steps to reproduce and a sample when reporting a bug.
