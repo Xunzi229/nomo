@@ -32,22 +32,22 @@
 
 从 [GitHub Releases](https://github.com/Xunzi229/nomo/releases/latest) 下载最新版本。
 
-本仓库基于 [nomo-md/nomo](https://github.com/nomo-md/nomo) 维护，以上下载链接指向本仓库的构建。应用内更新仍检查上游发布，本仓库新版请手动下载安装包。
+项目、下载与更新渠道统一为 [Xunzi229/nomo](https://github.com/Xunzi229/nomo)。Windows 更新检查和 Homebrew 均使用本仓库 Release。v0.6.3 及更早安装包请先从本仓库手动安装一次 v0.6.4，之后再使用应用内更新。
 
 | 系统 | 要求 | 安装方式 |
 | :--- | :--- | :--- |
 | Windows | Windows 10 / 11，x64 | `.exe` 安装版 / `.zip` 免安装版 |
-| macOS | macOS 12.0+，Apple Silicon | `.dmg` / Homebrew（上游版） |
+| macOS | macOS 12.0+，Apple Silicon | `.dmg` / Homebrew |
 | Linux | x64，GTK 3 / WebKitGTK 4.1 | `.deb` / `.rpm` |
 
-如需安装上游版本，macOS 可使用 Homebrew：
+macOS 也可通过 Homebrew 安装：
 
 ```bash
-brew tap nomo-md/nomo https://github.com/nomo-md/nomo
-brew install --cask nomo
+brew tap Xunzi229/nomo https://github.com/Xunzi229/nomo
+brew install --cask Xunzi229/nomo/nomo
 ```
 
-升级：`brew upgrade --cask nomo`。
+升级：`brew upgrade --cask Xunzi229/nomo/nomo`。
 
 首次打开可能出现 SmartScreen / Gatekeeper 提示，请从本项目 Releases 下载。
 
@@ -107,9 +107,9 @@ bash scripts/build-linux.sh
 
 ## 参与项目
 
-欢迎提交 [Issue](https://github.com/nomo-md/nomo/issues) 或 [Pull Request](https://github.com/nomo-md/nomo/pulls)；反馈问题时请附系统版本、复现步骤与样例。
+欢迎提交 [Issue](https://github.com/Xunzi229/nomo/issues) 或 [Pull Request](https://github.com/Xunzi229/nomo/pulls)；反馈问题时请附系统版本、复现步骤与样例。
 
-喜欢 Nomo，欢迎 [Star 项目](https://github.com/nomo-md/nomo) 或关注作者 [LIXianSenQwQ](https://github.com/LIXianSenQwQ)。社区：[linux.do](https://linux.do/)。
+喜欢 Nomo，欢迎 [Star 项目](https://github.com/Xunzi229/nomo) 或关注维护者 [Xunzi229](https://github.com/Xunzi229)。
 
 采用 [AGPL-3.0-or-later](./LICENSE) 许可证；商业授权请联系维护者，第三方组件遵循各自许可证。
 

@@ -9,7 +9,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewWindow};
 
-const GITHUB_LATEST_RELEASE_API: &str = "https://api.github.com/repos/nomo-md/nomo/releases/latest";
+const GITHUB_LATEST_RELEASE_API: &str =
+    "https://api.github.com/repos/Xunzi229/nomo/releases/latest";
 const GITHUB_PROXY_PREFIX: &str = "https://gh-proxy.com/";
 const UPDATE_CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
 const UPDATE_SMALL_REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
@@ -1400,17 +1401,11 @@ fn github_proxy_url(original_url: &str) -> Option<String> {
         return None;
     }
 
-    // 仓库迁移后 Release 返回新地址，同时兼容旧地址和已有更新缓存。
+    // 代理回退只访问当前仓库的 Release API、安装包和校验清单。
     let allowed = (url.host_str() == Some("api.github.com")
-        && matches!(
-            url.path(),
-            "/repos/nomo-md/nomo/releases/latest" | "/repos/LIXianSenQwQ/nomo/releases/latest"
-        ))
+        && url.path() == "/repos/Xunzi229/nomo/releases/latest")
         || (url.host_str() == Some("github.com")
-            && (url.path().starts_with("/nomo-md/nomo/releases/download/")
-                || url
-                    .path()
-                    .starts_with("/LIXianSenQwQ/nomo/releases/download/")));
+            && url.path().starts_with("/Xunzi229/nomo/releases/download/"));
     allowed.then(|| format!("{GITHUB_PROXY_PREFIX}{original_url}"))
 }
 
@@ -1513,7 +1508,8 @@ fn software_update_cache_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, 
         .path()
         .app_cache_dir()
         .map_err(|error| format!("获取更新缓存目录失败：{error}"))?
-        .join("updates"))
+        .join("updates")
+        .join("Xunzi229-nomo"))
 }
 
 fn save_cached_update_info(
@@ -1670,9 +1666,43 @@ fn launch_windows_installer_and_exit<R: Runtime>(
 #[cfg(test)]
 mod tests {
     use super::{
-        find_md5_for_file, is_release_newer, perform_software_update_check,
+        find_md5_for_file, github_proxy_url, is_release_newer, perform_software_update_check,
         select_windows_installer_asset, GitHubReleaseAsset, SoftwareUpdateInstallationKind,
+        GITHUB_LATEST_RELEASE_API,
     };
+
+    #[test]
+    fn proxies_only_current_repository_release_endpoints() {
+        assert_eq!(
+            GITHUB_LATEST_RELEASE_API,
+            "https://api.github.com/repos/Xunzi229/nomo/releases/latest"
+        );
+        for url in [
+            GITHUB_LATEST_RELEASE_API,
+            "https://github.com/Xunzi229/nomo/releases/download/v0.6.4/checksums.md5",
+            "https://github.com/Xunzi229/nomo/releases/download/v0.6.4/Nomo_0.6.4_x64-setup.exe",
+        ] {
+            assert_eq!(
+                github_proxy_url(url),
+                Some(format!("https://gh-proxy.com/{url}"))
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_other_repository_and_modified_proxy_urls() {
+        for url in [
+            "https://api.github.com/repos/other/nomo/releases/latest",
+            "https://github.com/other/nomo/releases/download/v0.6.4/checksums.md5",
+            "https://github.com/Xunzi229/nomo-other/releases/download/v0.6.4/checksums.md5",
+            "http://api.github.com/repos/Xunzi229/nomo/releases/latest",
+            "https://user@api.github.com/repos/Xunzi229/nomo/releases/latest",
+            "https://api.github.com:443/repos/Xunzi229/nomo/releases/latest?redirect=other",
+            "https://github.com/Xunzi229/nomo/releases/download/v0.6.4/checksums.md5#other",
+        ] {
+            assert_eq!(github_proxy_url(url), None, "{url}");
+        }
+    }
 
     fn asset(name: &str) -> GitHubReleaseAsset {
         GitHubReleaseAsset {

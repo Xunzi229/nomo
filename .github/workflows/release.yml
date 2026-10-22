@@ -198,7 +198,7 @@ jobs:
     name: Update Homebrew cask
     runs-on: ubuntu-latest
     needs: checksums
-    if: ${{ github.repository == 'nomo-md/nomo' && !contains(github.ref_name, '-') }}
+    if: ${{ github.repository == 'Xunzi229/nomo' && !contains(github.ref_name, '-') }}
     permissions:
       contents: write
 
@@ -233,95 +233,3 @@ jobs:
           fi
           git commit -m "chore(homebrew): bump nomo cask to ${version}"
           git push
-
-  sync-pages:
-    name: Sync release to download sites
-    runs-on: ubuntu-latest
-    needs: [build, checksums]
-    if: >-
-      ${{
-        always() &&
-        github.repository == 'nomo-md/nomo' &&
-        needs.build.result == 'success' &&
-        (contains(github.ref_name, '-') || needs.checksums.result == 'success')
-      }}
-    timeout-minutes: 30
-    steps:
-      - name: Trigger Pages deployment
-        env:
-          DEPLOY_HOOK_URL: ${{ secrets.CLOUDFLARE_PAGES_DEPLOY_HOOK }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$DEPLOY_HOOK_URL" || {
-            echo 'Missing CLOUDFLARE_PAGES_DEPLOY_HOOK repository secret.' >&2
-            exit 1
-          }
-          curl --fail --show-error --silent --request POST "$DEPLOY_HOOK_URL" >/dev/null
-
-      - name: Trigger GitHub Pages deployment
-        env:
-          GH_TOKEN: ${{ secrets.WEBSITE_ACTIONS_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$GH_TOKEN" || {
-            echo 'Missing WEBSITE_ACTIONS_TOKEN repository secret.' >&2
-            exit 1
-          }
-          gh api \
-            --method POST \
-            repos/nomo-md/nomo-md.github.io/actions/workflows/deploy-github-pages.yml/dispatches \
-            --field ref=master
-
-      - name: Verify latest stable download mirror
-        if: ${{ !contains(github.ref_name, '-') }}
-        env:
-          EXPECTED_TAG: ${{ github.ref_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          base_urls=(
-            'https://nomo-md.pages.dev'
-            'https://nomo-md.github.io'
-          )
-          declare -A manifests=()
-
-          for attempt in $(seq 1 150); do
-            all_ready=true
-            for base_url in "${base_urls[@]}"; do
-              if [[ -n "${manifests[$base_url]:-}" ]]; then
-                continue
-              fi
-
-              if manifest="$(curl --fail --silent --show-error \
-                "$base_url/downloads/latest.json?expected=$EXPECTED_TAG&attempt=$attempt")"; then
-                actual_tag="$(jq -r '.tag // empty' <<<"$manifest")"
-                asset_count="$(jq -r '.assets | length' <<<"$manifest")"
-                if [[ "$actual_tag" == "$EXPECTED_TAG" && "$asset_count" == '6' ]]; then
-                  manifests[$base_url]="$manifest"
-                  continue
-                fi
-              fi
-
-              all_ready=false
-            done
-
-            if [[ "$all_ready" == 'true' && "${#manifests[@]}" == "${#base_urls[@]}" ]]; then
-              break
-            fi
-            sleep 10
-          done
-
-          [[ "${#manifests[@]}" == "${#base_urls[@]}" ]] || {
-            echo "The download sites did not publish $EXPECTED_TAG within 25 minutes." >&2
-            exit 1
-          }
-
-          for base_url in "${base_urls[@]}"; do
-            mapfile -t asset_urls < <(jq -r '.assets[].url' <<<"${manifests[$base_url]}")
-            [[ "${#asset_urls[@]}" == '6' ]]
-            for asset_url in "${asset_urls[@]}"; do
-              curl --fail --silent --show-error --location --head "$base_url$asset_url" >/dev/null
-            done
-          done

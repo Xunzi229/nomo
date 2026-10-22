@@ -1,11 +1,11 @@
 cask "nomo" do
-  version "0.6.2"
-  sha256 "e38f6e08ed317566225d4426012b4806074c7d138589c92e0bd10d2f499a3190"
+  version "0.6.3"
+  sha256 "3b9c7baac3cb17053f4f4973e64950bac4f4fd7b5dd071e81712f140f010749f"
 
-  url "https://github.com/nomo-md/nomo/releases/download/v#{version}/Nomo_#{version}_aarch64.dmg"
+  url "https://github.com/Xunzi229/nomo/releases/download/v#{version}/Nomo_#{version}_aarch64.dmg"
   name "Nomo"
   desc "Local-first Markdown desktop editor"
-  homepage "https://github.com/nomo-md/nomo"
+  homepage "https://github.com/Xunzi229/nomo"
 
   livecheck do
     url :url

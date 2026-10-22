@@ -16,7 +16,7 @@ function snapshot(markdown: string): ExportSnapshot {
 describe('unmounted readonly export', () => {
   it('README HTML 的徽章与语言链接沿用编辑器的行内排版，内嵌前标记回退 HTML 图片', async () => {
     const input = snapshot([
-      '<p align="center">\n  <a href="https://example.com/release">\n    <img src="https://img.shields.io/github/v/release/nomo-md/nomo" alt="release">\n  </a>\n  <img src="https://img.shields.io/badge/platform-Windows-blue" alt="platform">\n  <a href="./LICENSE">\n    <img src="https://badgen.net/badge/license/AGPL" alt="license">\n  </a>\n</p>',
+      '<p align="center">\n  <a href="https://example.com/release">\n    <img src="https://img.shields.io/github/v/release/Xunzi229/nomo" alt="release">\n  </a>\n  <img src="https://img.shields.io/badge/platform-Windows-blue" alt="platform">\n  <a href="./LICENSE">\n    <img src="https://badgen.net/badge/license/AGPL" alt="license">\n  </a>\n</p>',
       '<p align="center">\n  <a href="./README.md"><strong>简体中文</strong></a>\n  ·\n  <a href="./README.en.md">English</a>\n</p>',
       '<p align="right">第一行<br>第二行</p>',
     ].join('\n\n'));

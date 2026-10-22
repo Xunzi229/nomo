@@ -112,8 +112,8 @@
   import nomoLogoDark from '../../../src-tauri/icons/nomo/source/nomo-app-dark.svg?url';
   import nomoLogoLight from '../../../src-tauri/icons/nomo/source/nomo-app-light.svg?url';
 
-  const GITHUB_REPOSITORY_URL = 'https://github.com/nomo-md/nomo';
-  const GITHUB_ISSUE_URL = 'https://github.com/nomo-md/nomo/issues/new/choose';
+  const GITHUB_REPOSITORY_URL = 'https://github.com/Xunzi229/nomo';
+  const GITHUB_ISSUE_URL = 'https://github.com/Xunzi229/nomo/issues/new/choose';
 
   type CategoryId =
     | 'general'

@@ -264,7 +264,7 @@
 | 更新前端 IPC 适配 | `src/lib/desktop/tauriUpdater.ts` | `src/app/services/softwareUpdate.ts` | 检查/下载/安装/共享快照 IPC 契约变更 |
 | 更新后端 | `src-tauri/src/software_update.rs` | `src-tauri/src/window/tray.rs` | GitHub Release、安装形态、共享状态、下载/校验/安装器 |
 | 升级后首次启动日志 | `src-tauri/src/software_update.rs`, `src/app/components/SoftwareUpdateSuccessDialog.svelte` | `src-tauri/src/lib.rs`, `src/app/App.svelte`, `src/lib/desktop/tauriUpdater.ts` | 内置日志、最高版本与待展示记录、跨窗口领取、实际挂载确认及启动时序 |
-| 版本发布与 Pages 同步 | `.github/workflows/release.yml` | `.github/workflows/backfill-linux-release.yml`, `.github/workflows/sync-pages-notes.yml`, `.github/release-notes/` | 安装包发布、已有稳定版的 Linux 补发、MD5 生成、发布说明维护、仅上游执行的 Homebrew 与 Cloudflare/GitHub Pages 同步及线上校验 |
+| 版本发布与 Homebrew 同步 | `.github/workflows/release.yml` | `.github/workflows/backfill-linux-release.yml`, `.github/release-notes/` | 安装包发布、已有稳定版的 Linux 补发、MD5 生成、发布说明维护、当前仓库的 GitHub Releases 与 Homebrew cask 同步 |
 
 ### 原生系统集成
 
@@ -2088,7 +2088,7 @@
 **Kind:** service
 
 **Owns：**
-- 检查 GitHub Release
+- 检查 Xunzi229/nomo 的 GitHub Release，代理回退仅允许当前仓库地址，更新缓存按发布渠道隔离
 - 区分 Windows 安装版、免安装版和不支持环境，选择对应资产
 - 维护进程级更新快照并通过 `nomo://software-update-state` 同步所有窗口
 - 下载、校验 MD5、启动安装器

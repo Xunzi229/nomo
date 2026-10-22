@@ -1,13 +1,13 @@
 # Nomo 隐私政策
 
 **生效日期：2026 年 8 月 6 日**  
-**最近更新：2026 年 8 月 13 日**
+**最近更新：2026 年 10 月 22 日**
 
 感谢您使用 Nomo（以下简称“本应用”）。本应用是一款以 Markdown 为核心的本地桌面文本编辑器。本隐私政策说明本应用会访问、保存或传输哪些信息，如何使用和保护这些信息，以及您可以如何管理这些信息。
 
 ## 1. 适用范围
 
-本政策适用于由清羽（以下简称“我们”）提供的 Nomo Windows 桌面应用。
+本政策适用于由本仓库维护者（以下简称“我们”）提供的 Nomo 桌面应用。
 
 本应用不要求您注册或登录账户。我们没有为本应用运营用于接收用户文档、建立用户档案或进行广告分析的后端服务器。
 
@@ -115,6 +115,6 @@ PicGo Server 通常由您在本机运行；PicGo-Core 及其图床插件可能�
 
 如果您对本隐私政策或 Nomo 的数据处理方式有疑问、意见或请求，请联系：
 
-- 负责人：清羽
-- 电子邮箱：892257306@qq.com
-- 项目地址：[https://github.com/LIXianSenQwQ/nomo](https://github.com/LIXianSenQwQ/nomo)
+- 维护者：[Xunzi229](https://github.com/Xunzi229)
+- 反馈渠道：[GitHub Issues](https://github.com/Xunzi229/nomo/issues)
+- 项目地址：[https://github.com/Xunzi229/nomo](https://github.com/Xunzi229/nomo)

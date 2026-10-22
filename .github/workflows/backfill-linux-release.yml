@@ -147,8 +147,3 @@ jobs:
           printf '\n\nLinux 包构建源码：[%s](https://github.com/%s/commit/%s)。\n' "$SOURCE_COMMIT" "$GH_REPO" "$SOURCE_COMMIT" >> "$RUNNER_TEMP/release-notes.md"
           gh release edit "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           printf 'Release: https://github.com/%s/releases/tag/%s\n\nLinux source: %s\n' "$GH_REPO" "$RELEASE_TAG" "$SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Trigger download site deployments
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run sync-pages-notes.yml --ref master

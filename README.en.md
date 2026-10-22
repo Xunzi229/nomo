@@ -32,22 +32,22 @@
 
 Get the latest version from [GitHub Releases](https://github.com/Xunzi229/nomo/releases/latest).
 
-This repository is a fork of [nomo-md/nomo](https://github.com/nomo-md/nomo). The download link above provides builds from this fork. In-app updates still check upstream releases; download updates for this fork manually.
+The project, downloads and update channels use [Xunzi229/nomo](https://github.com/Xunzi229/nomo). Windows update checks and Homebrew both use releases from this repository. Install v0.6.4 from this repository manually once when migrating from v0.6.3 or earlier, then use in-app updates.
 
 | Platform | Requirements | Installation |
 | :--- | :--- | :--- |
 | Windows | Windows 10 / 11, x64 | `.exe` installer / `.zip` portable |
-| macOS | macOS 12.0+, Apple Silicon | `.dmg` / Homebrew (upstream) |
+| macOS | macOS 12.0+, Apple Silicon | `.dmg` / Homebrew |
 | Linux | x64, GTK 3 / WebKitGTK 4.1 | `.deb` / `.rpm` |
 
-To install the upstream version on macOS, use Homebrew:
+On macOS, you can also install with Homebrew:
 
 ```bash
-brew tap nomo-md/nomo https://github.com/nomo-md/nomo
-brew install --cask nomo
+brew tap Xunzi229/nomo https://github.com/Xunzi229/nomo
+brew install --cask Xunzi229/nomo/nomo
 ```
 
-Upgrade with `brew upgrade --cask nomo`.
+Upgrade with `brew upgrade --cask Xunzi229/nomo/nomo`.
 
 SmartScreen or Gatekeeper may prompt on first launch; download from this project's Releases.
 
@@ -107,9 +107,9 @@ If the tag does not trigger a run automatically, use `gh workflow run release.ym
 
 ## Get Involved
 
-[Issues](https://github.com/nomo-md/nomo/issues) and [pull requests](https://github.com/nomo-md/nomo/pulls) are welcome; include your OS version, steps to reproduce and a sample when reporting a bug.
+[Issues](https://github.com/Xunzi229/nomo/issues) and [pull requests](https://github.com/Xunzi229/nomo/pulls) are welcome; include your OS version, steps to reproduce and a sample when reporting a bug.
 
-Enjoy Nomo? [Star the project](https://github.com/nomo-md/nomo) or follow [LIXianSenQwQ](https://github.com/LIXianSenQwQ). Community: [linux.do](https://linux.do/).
+Enjoy Nomo? [Star the project](https://github.com/Xunzi229/nomo) or follow the maintainer [Xunzi229](https://github.com/Xunzi229).
 
 Licensed under [AGPL-3.0-or-later](./LICENSE); contact the maintainers for separate commercial licensing. Third-party components retain their own licenses.
 
