@@ -132,7 +132,7 @@
 | 文件存储与文档仓库接口 | `src/lib/services/storage.ts` | `src/lib/desktop/tauriStorage.ts` | FileStorage、DocumentRepository、Markdown 源编码契约变更 |
 | 渲染服务类型接口 | `src/lib/services/render.ts` | `src/lib/services/shikiCodeTokenizer.ts`, `katexMathRenderer.ts`, `mermaidDiagramRenderer.ts` | ImageLoader、CodeTokenizer、MathRenderer、DiagramRenderer 接口变更 |
 | 文档文件 IO | `src/app/services/documentFiles.ts` | `src/lib/desktop/tauriStorage.ts` | 文件选择框多选、串行批次打开失败收集及文件读取/保存/最近文件/目录树前端调用 |
-| 文件夹资源管理 | `src/app/services/folderExplorerController.ts` | `src/app/services/folderTree.ts`, `explorerRows.ts` | 目录树按需加载/展开/串行刷新已加载目录 |
+| 文件夹资源管理 | `src/app/services/folderExplorerController.ts` | `src/app/services/folderTree.ts`, `explorerRows.ts` | 打开 Markdown 时按偏好显示父目录或沿用已有根目录、目录树按需加载/展开/串行刷新已加载目录 |
 | 目录树纯函数 | `src/app/services/folderTree.ts` | — | 树的归一化/查找/更新 |
 | 资源管理器展示 | `src/app/services/explorerRows.ts` | — | 树形拍平为可渲染行 |
 | 资源管理器重命名规则 | `src/app/services/explorerRename.ts` | — | 行内重命名输入框选区范围 |
@@ -1024,7 +1024,8 @@
 **Kind:** controller
 
 **Owns:**
-- 文件夹资源管理：加载文件夹、展开祖先目录
+- 文件夹资源管理：按自动显示目录偏好加载文件父目录，已有根目录包含文件时沿用并展开祖先目录
+- 根目录切换及销毁时使旧根目录、子目录和后台刷新响应失效
 - 懒加载子目录
 - 合并并同步已加载目录的重叠刷新
 - 新建、删除、重命名和手动刷新保留展开状态；用户操作等待后台刷新后读取新快照
@@ -2028,7 +2029,7 @@
 - 使用短生命周期目录快照按需枚举根目录与已加载子目录
 - 路径存在性检查
 - 示例文档安装
-- Markdown-like 文件过滤、忽略规则、`.gitignore`、目录优先排序
+- 文件树仅展示 Markdown 文件与目录，保留忽略规则、`.gitignore`、目录优先排序；批量打开目录仍枚举全部支持的文档
 
 **Does not own：**
 - 不拥有图片资源处理（在 file_system/image_assets.rs 中）

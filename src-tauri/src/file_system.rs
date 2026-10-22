@@ -487,7 +487,7 @@ fn read_dir_children(
                 children_loaded: false,
                 children: Vec::new(),
             });
-        } else if path_buf.is_file() && is_supported_document_file(&path_buf) {
+        } else if path_buf.is_file() && is_markdown_file(&path_buf) {
             entries.push(FileTreeEntry {
                 name,
                 path: path_buf.to_string_lossy().to_string(),
@@ -547,7 +547,7 @@ fn has_visible_children(dir: &Path, root: &Path, ignore_rules: &IgnoreRules) -> 
         if ignore_rules.is_ignored(root, &path_buf, name, is_dir) {
             continue;
         }
-        if is_dir || (path_buf.is_file() && is_supported_document_file(&path_buf)) {
+        if is_dir || (path_buf.is_file() && is_markdown_file(&path_buf)) {
             return true;
         }
     }
@@ -555,7 +555,15 @@ fn has_visible_children(dir: &Path, root: &Path, ignore_rules: &IgnoreRules) -> 
     false
 }
 
-// 文件夹树和外部目录入口必须共享同一扩展名契约，避免某个入口静默隐藏分段文档。
+// 文件树只展示 Markdown；TXT/JSON 仍可通过文件打开入口编辑。
+fn is_markdown_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown"))
+        .unwrap_or(false)
+}
+
+// 批量打开目录时读取编辑器支持的文档。
 fn is_supported_document_file(path: &Path) -> bool {
     path.extension()
         .and_then(|ext| ext.to_str())
@@ -832,6 +840,9 @@ mod tests {
         let visible_dir = root.join("B-visible");
         let deep_dir = visible_dir.join("deep");
         let ignored_dir = root.join("node_modules");
+        let assets_dir = root.join("images");
+        fs::create_dir_all(&assets_dir).expect("create assets dir");
+        fs::write(assets_dir.join("diagram.png"), [0_u8]).expect("write image");
         fs::create_dir_all(&empty_dir).expect("create empty dir");
         fs::create_dir_all(&deep_dir).expect("create deep dir");
         fs::create_dir_all(&ignored_dir).expect("create ignored dir");
@@ -839,6 +850,9 @@ mod tests {
         fs::write(ignored_dir.join("ignored.md"), "# ignored").expect("write ignored markdown");
         fs::write(root.join("z.md"), "# z").expect("write z markdown");
         fs::write(root.join("A.txt"), "a").expect("write text");
+        fs::write(root.join("data.json"), "{}").expect("write json");
+        fs::write(root.join("guide.MARKDOWN"), "# guide").expect("write long markdown extension");
+        fs::write(root.join("README.MD"), "# readme").expect("write uppercase markdown extension");
         fs::write(root.join("ignored.bin"), [0_u8]).expect("write binary");
 
         let ignore_rules = IgnoreRules::load(&root, Some(&root));
@@ -848,10 +862,15 @@ mod tests {
             .map(|entry| entry.name.as_str())
             .collect::<Vec<_>>();
 
-        assert_eq!(names, vec!["a-empty", "B-visible", "A.txt", "z.md"]);
+        assert_eq!(
+            names,
+            vec!["a-empty", "B-visible", "images", "guide.MARKDOWN", "README.MD", "z.md"]
+        );
         assert!(!entries[0].has_children);
         assert!(entries[1].has_children);
         assert!(entries[1].children.is_empty());
+        assert!(!entries[2].has_children);
+        assert!(entries[2].children.is_empty());
         assert!(!names.contains(&"deep"));
         assert!(!names.contains(&"node_modules"));
 

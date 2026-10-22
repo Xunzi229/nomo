@@ -7,7 +7,7 @@ import {
   type MarkdownTabState,
   type Tab,
 } from '../types';
-import { getDirectoryLabel, sameNativePath } from '../utils/pathLabels';
+import { sameNativePath } from '../utils/pathLabels';
 import {
   exportMarkdownInBrowser,
   findDroppedMarkdownPath,
@@ -109,11 +109,10 @@ interface DocumentActionsOptions {
   setRecentFiles(value: Awaited<ReturnType<typeof loadRecentEntries>>): void;
   saveActiveTabState(): void;
   loadTabState(tab: Tab): void;
-  switchTab(tabId: string): void;
+  switchTab(tabId: string): void | Promise<void>;
   writeRecoveryDraft(reason: string): void;
   updateWindowTitle(): void;
-  loadFolder(folderPath: string): Promise<void>;
-  expandAncestors(filePath: string, rootPath: string): void;
+  revealDocumentInExplorer(documentPath: string): Promise<void>;
 }
 
 export function createDocumentActionsController(options: DocumentActionsOptions) {
@@ -379,7 +378,8 @@ export function createDocumentActionsController(options: DocumentActionsOptions)
       if (existingTab.id === options.getPreviewTabId()) {
         options.setPreviewTabId(null);
       }
-      options.switchTab(existingTab.id);
+      await options.switchTab(existingTab.id);
+      await options.revealDocumentInExplorer(document.path);
       options.setStatusMessage(t.switchedToOpenedTab());
       return;
     }
@@ -421,7 +421,7 @@ export function createDocumentActionsController(options: DocumentActionsOptions)
       options.setStatusMessage(t.largeDocumentReadonlyOpened());
     }
 
-    await revealDocumentInExplorer(document.path);
+    await options.revealDocumentInExplorer(document.path);
   }
 
   async function applySavedNativeDocument(
@@ -464,22 +464,7 @@ export function createDocumentActionsController(options: DocumentActionsOptions)
       options.setStatusMessage(t.largeDocumentReadonlyOpened());
     }
 
-    await revealDocumentInExplorer(document.path);
-  }
-
-  async function revealDocumentInExplorer(documentPath: string) {
-    const parentDir = getDirectoryLabel(documentPath);
-    if (!parentDir || parentDir === t.currentFolder()) {
-      return;
-    }
-
-    const currentFolderPath = options.getCurrentFolderPath();
-    if (!currentFolderPath) {
-      await options.loadFolder(parentDir).catch(() => undefined);
-      return;
-    }
-
-    options.expandAncestors(documentPath, currentFolderPath);
+    await options.revealDocumentInExplorer(document.path);
   }
 
   function createNewFile() {

@@ -400,6 +400,8 @@
   let quickInsertTrigger = DEFAULT_APP_PREFERENCES.quickInsertTrigger;
   let shortcutPreferences: ShortcutPreferences = { ...DEFAULT_APP_PREFERENCES.shortcutPreferences };
   let imageSettings: ImageHandlingSettings = { ...DEFAULT_IMAGE_HANDLING_SETTINGS };
+  let autoOpenFileDirectory = DEFAULT_APP_PREFERENCES.autoOpenFileDirectory;
+  let explorerPreferencesReady = false;
   let openDefaultBehavior: OpenDefaultBehavior = DEFAULT_APP_PREFERENCES.openDefaultBehavior;
   let pendingOpenChoice: OpenTarget | null = null;
   let pendingOpenDirectoryWindows: OpenDirectoryWindow[] = [];
@@ -1856,6 +1858,12 @@
       if (owner?.kind !== 'comparison' && !mountedDocumentRuntimes.has(runtime)) scheduleReadingPositionRestore(tab, nextReadingMode, storedPosition, restoreGeneration);
     } finally {
       isSwitchingTab = false;
+      if (
+        explorerPreferencesReady && tab.nativePath &&
+        !startupFolderPath && !startupFolderLoadScheduled && !startupFolderLoadInProgress
+      ) {
+        void revealDocumentInExplorer(tab.nativePath);
+      }
     }
   }
 
@@ -1898,10 +1906,6 @@
         persistWorkspaceState();
         loadTabState(targetTab);
         updateWindowTitle();
-        // 切换后若标签关联了本地文件，展开资源管理器中对应的文件夹路径
-        if (targetTab.nativePath && currentFolderPath) {
-          expandAncestors(targetTab.nativePath, currentFolderPath);
-        }
       }
     } catch (error) {
       showVisibleError(error, t.saveFileFailed());
@@ -4780,6 +4784,7 @@
     );
     if (existingTab) {
       await switchTab(existingTab.id);
+      await revealDocumentInExplorer(path);
       return;
     }
 
@@ -4860,14 +4865,7 @@
     activeTabId = targetTab.id;
     loadTabState(targetTab);
 
-    const parentDir = getDirectoryLabel(document.path);
-    if (parentDir && parentDir !== t.currentFolder()) {
-      if (!currentFolderPath) {
-        loadFolder(parentDir).catch(() => undefined);
-      } else {
-        expandAncestors(document.path, currentFolderPath);
-      }
-    }
+    await revealDocumentInExplorer(document.path);
   }
 
   async function applyOpenedSegmentedDocument(
@@ -4925,14 +4923,7 @@
     persistWorkspaceState();
     updateWindowTitle();
 
-    const parentDir = getDirectoryLabel(path);
-    if (parentDir && parentDir !== t.currentFolder()) {
-      if (!currentFolderPath) {
-        loadFolder(parentDir).catch(() => undefined);
-      } else {
-        expandAncestors(path, currentFolderPath);
-      }
-    }
+    await revealDocumentInExplorer(path);
   }
 
   // 手动固定当前预览标签页（双击标签页标题）
@@ -5130,8 +5121,7 @@
     switchTab,
     writeRecoveryDraft,
     updateWindowTitle,
-    loadFolder,
-    expandAncestors,
+    revealDocumentInExplorer,
   });
   const outlineInteraction = createOutlineInteractionController({
     getMode: () => getActiveEditorMode(),
@@ -5483,6 +5473,7 @@
     if (existingTab) {
       await switchTab(existingTab.id);
       if (existingTab.id === previewTabId) previewTabId = null;
+      await revealDocumentInExplorer(path);
       statusMessage = t.switchedToOpenedTab();
       await rememberRecentEntry(path, 'file', existingTab.fileName, 0);
       return activeTabId === existingTab.id;
@@ -6337,6 +6328,8 @@
     imageSettings = preferences.imageHandlingSettings;
     openDefaultBehavior = preferences.openDefaultBehavior;
     filePreviewEnabled = preferences.filePreviewEnabled;
+    autoOpenFileDirectory = preferences.autoOpenFileDirectory;
+    explorerPreferencesReady = true;
     closeWindowBehavior = preferences.closeWindowBehavior;
     externalFileChangeBehavior = preferences.externalFileChangeBehavior;
     focusMode = preferences.sidebarHidden;
@@ -6444,6 +6437,7 @@
       largeDocumentLimit,
       openDefaultBehavior,
       filePreviewEnabled,
+      autoOpenFileDirectory,
       closeWindowBehavior,
       externalFileChangeBehavior,
       sidebarHidden: focusMode,
@@ -6851,6 +6845,7 @@
   });
 
   onDestroy(() => {
+    folderExplorer.dispose();
     wordExportAbort?.abort();
     documentExportAbort?.abort();
     markdownMiniTransitionController?.dispose();
@@ -7619,7 +7614,7 @@
     }
   }
 
-  // 双击 md 文件启动：不恢复上次工作区，只打开文件所在目录并打开该文件
+  // 双击文件启动：不恢复上次工作区，目录展示由打开文件的偏好控制
   async function openStartupExternalMarkdownPaths(paths: string[]) {
     logInfo('ExternalOpen', '开始处理冷启动文件', { paths });
     if (!desktopEnabled || paths.length === 0) {
@@ -7633,15 +7628,6 @@
 
     // 丢弃恢复的标签，避免上次工作区干扰
     clearAllTabsWithoutCreatingBlank({ skipPersist: true });
-
-    const firstPath = supportedPaths[0];
-    const parentDir = getDirectoryLabel(firstPath);
-
-    if (parentDir && parentDir !== t.currentFolder()) {
-      currentFolderPath = parentDir;
-      await loadFolder(parentDir).catch(() => undefined);
-      await rememberNativeFolder(parentDir).catch(() => undefined);
-    }
 
     await openTargetInCurrentWindow({ kind: 'documents', paths: supportedPaths });
   }
@@ -7798,6 +7784,17 @@
       return syncSystemThemeFromDesktop({ transition: true, systemScheme });
     });
     systemThemeListenerReady = true;
+  }
+
+  async function revealDocumentInExplorer(path: string) {
+    // 后台保存结果不能把文件树切回已失焦文档的目录。
+    if (!nativePath || !sameNativePath(nativePath, path)) return;
+    const autoOpen = getDocumentKindFromPath(path) === 'markdown'
+      ? autoOpenFileDirectory
+      : !currentFolderPath;
+    await folderExplorer.revealFile(path, autoOpen).catch((error) => {
+      showVisibleError(error, t.loadFolderTreeFailed());
+    });
   }
 
   async function loadFolder(folderPath: string) {

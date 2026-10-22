@@ -34,6 +34,109 @@ describe('folderExplorerController', () => {
     expect(state.statusMessage).not.toMatch(/索引|index/i);
   });
 
+  it.each(['/notes/readme.md', '/readme.md', 'C:\\readme.md', 'C:/readme.md'])(
+    '自动显示文件所在目录并保留原生根路径：%s',
+    async (path) => {
+      const state = createControllerState('');
+      vi.mocked(loadFolderTree).mockResolvedValue([file('readme.md', path)]);
+      await state.controller.revealFile(path, true);
+      const root =
+        path === '/readme.md' ? '/' : path.startsWith('C:') ? path.slice(0, 3) : '/notes';
+      expect(state.currentFolderPath).toBe(root);
+      expect(loadFolderTree).toHaveBeenCalledWith(root);
+      expect(state.folderTree[0].name).toBe('readme.md');
+    },
+  );
+
+  it('关闭自动显示时不载入新目录，也不替换现有文件树', async () => {
+    const state = createControllerState('/notes', [file('readme.md', '/notes/readme.md')]);
+    await state.controller.revealFile('/other/readme.md', false);
+    expect(state.currentFolderPath).toBe('/notes');
+    expect(state.folderTree[0].path).toBe('/notes/readme.md');
+    expect(loadFolderTree).not.toHaveBeenCalled();
+    expect(loadFolderChildren).not.toHaveBeenCalled();
+  });
+
+  it('现有根目录包含文件时只展开其祖先，关闭自动显示仍可定位', async () => {
+    const state = createControllerState('/notes', [
+      folder({ name: 'project', path: '/notes/project', has_children: true }),
+    ]);
+    vi.mocked(loadFolderChildren).mockResolvedValue([
+      file('readme.md', '/notes/project/readme.md'),
+    ]);
+    await state.controller.revealFile('/notes/project/readme.md', false);
+    expect(state.currentFolderPath).toBe('/notes');
+    expect(loadFolderTree).not.toHaveBeenCalled();
+    expect(loadFolderChildren).toHaveBeenCalledWith('/notes/project', '/notes');
+    expect(state.expandedFolders.has('/notes/project')).toBe(true);
+    expect(state.folderTree[0].children[0].name).toBe('readme.md');
+  });
+
+  it('路径仅共享名称前缀时改用文件父目录', async () => {
+    const state = createControllerState('/notes');
+    vi.mocked(loadFolderTree).mockResolvedValue([]);
+    await state.controller.revealFile('/notes-archive/project/readme.md', true);
+    expect(state.currentFolderPath).toBe('/notes-archive/project');
+    expect(loadFolderChildren).not.toHaveBeenCalled();
+  });
+
+  it('快速切换目录时忽略迟到的旧目录结果和错误', async () => {
+    const state = createControllerState('');
+    let resolveOld!: (value: Awaited<ReturnType<typeof loadFolderTree>>) => void;
+    vi.mocked(loadFolderTree).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOld = resolve;
+        }),
+    );
+    const first = state.controller.revealFile('/old/readme.md', true);
+    vi.mocked(loadFolderTree).mockResolvedValueOnce([file('new.md', '/new/new.md')]);
+    await state.controller.revealFile('/new/new.md', true);
+    const message = state.statusMessage;
+    resolveOld({ tree: [], error: 'old request failed' });
+    await first;
+    expect(state.currentFolderPath).toBe('/new');
+    expect(state.folderTree[0].name).toBe('new.md');
+    expect(state.statusMessage).toBe(message);
+  });
+
+  it('旧目录后台刷新完成时不能覆盖新根目录', async () => {
+    const state = createControllerState('/old');
+    let resolveExists!: (value: boolean[]) => void;
+    vi.mocked(checkPathsExist).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveExists = resolve;
+        }),
+    );
+    const refreshing = state.controller.syncLoadedFolders();
+    vi.mocked(loadFolderTree).mockResolvedValueOnce([file('new.md', '/new/new.md')]);
+    await state.controller.revealFile('/new/new.md', true);
+    resolveExists([false]);
+    await refreshing;
+    expect(state.currentFolderPath).toBe('/new');
+    expect(state.folderTree[0].name).toBe('new.md');
+  });
+
+  it('销毁后失效仍在读取的目录结果', async () => {
+    const state = createControllerState('');
+    let resolveRoot!: (value: FileTreeNode[]) => void;
+    vi.mocked(loadFolderTree).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRoot = resolve;
+        }),
+    );
+    const opening = state.controller.revealFile('/notes/readme.md', true);
+    state.controller.dispose();
+    resolveRoot([file('readme.md', '/notes/readme.md')]);
+    await opening;
+    expect(state.folderTree).toEqual([]);
+    expect(state.statusMessage).toBe('');
+    await state.controller.revealFile('/other/readme.md', true);
+    expect(loadFolderTree).toHaveBeenCalledOnce();
+  });
+
   it('合并仍在执行的目录刷新，完成后允许下一次刷新', async () => {
     const state = createControllerState('D:\\Demo\\Workspace');
     let resolveExists!: (value: boolean[]) => void;

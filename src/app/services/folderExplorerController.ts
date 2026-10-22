@@ -1,6 +1,6 @@
 import type { FileTreeNode } from '../types';
 import { checkPathsExist } from '../../lib/desktop/tauriStorage';
-import { getFolderName } from '../utils/pathLabels';
+import { getFolderName, pathEqualsOrDescendsFrom } from '../utils/pathLabels';
 import { loadFolderChildren, loadFolderTree, pickFolderPath } from './documentFiles';
 import {
   collectTreePaths,
@@ -30,8 +30,47 @@ interface FolderExplorerControllerOptions {
 
 export function createFolderExplorerController(options: FolderExplorerControllerOptions) {
   let syncInFlight: Promise<void> | null = null;
+  let rootLoad: Promise<void> | null = null;
+  let generation = 0;
+  let disposed = false;
+
+  function isCurrent(requestGeneration: number, rootPath: string) {
+    return (
+      !disposed &&
+      requestGeneration === generation &&
+      samePath(rootPath, options.getCurrentFolderPath())
+    );
+  }
+
+  async function revealFile(filePath: string, autoOpenDirectory: boolean) {
+    if (!options.getDesktopEnabled() || disposed) return;
+    let rootPath = options.getCurrentFolderPath();
+    let requestGeneration = generation;
+    if (!rootPath || !pathEqualsOrDescendsFrom(filePath, rootPath)) {
+      if (!autoOpenDirectory) return;
+      // 保留原生分隔符及 POSIX /、Windows C:\ 根路径，不能使用仅供展示的目录标签。
+      const separator = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+      if (separator < 0) return;
+      rootPath = filePath.slice(0, separator || 1);
+      if (/^[a-z]:$/i.test(rootPath)) rootPath += filePath[separator];
+      const operation = loadFolder(rootPath);
+      requestGeneration = generation;
+      await operation;
+    } else if (rootLoad) {
+      await rootLoad;
+    }
+    if (!rootPath || !isCurrent(requestGeneration, rootPath)) return;
+    options.setRootFolderExpanded(true);
+    await expandAncestors(filePath, rootPath);
+  }
 
   async function expandAncestors(filePath: string, rootPath: string) {
+    if (
+      disposed ||
+      !samePath(rootPath, options.getCurrentFolderPath()) ||
+      !pathEqualsOrDescendsFrom(filePath, rootPath)
+    )
+      return;
     options.setExpandedFolders(
       expandFolderAncestors(options.getExpandedFolders(), filePath, rootPath),
     );
@@ -57,11 +96,27 @@ export function createFolderExplorerController(options: FolderExplorerController
     options.setRootFolderExpanded(!options.getRootFolderExpanded());
   }
 
-  async function loadFolder(folderPath: string) {
+  function loadFolder(folderPath: string): Promise<void> {
+    if (disposed) return Promise.resolve();
+    if (rootLoad && samePath(folderPath, options.getCurrentFolderPath())) return rootLoad;
+    const requestGeneration = ++generation;
     options.setCurrentFolderPath(folderPath);
     options.setRootFolderExpanded(true);
     options.setExpandedFolders(new Set());
+    options.setFolderTree([]);
+    const operation = loadRoot(folderPath, requestGeneration);
+    rootLoad = operation;
+    void operation
+      .finally(() => {
+        if (rootLoad === operation) rootLoad = null;
+      })
+      .catch(() => undefined);
+    return operation;
+  }
+
+  async function loadRoot(folderPath: string, requestGeneration: number) {
     const result = await loadFolderTree(folderPath);
+    if (!isCurrent(requestGeneration, folderPath)) return;
 
     if ('error' in result) {
       options.setStatusMessage(result.error);
@@ -101,12 +156,14 @@ export function createFolderExplorerController(options: FolderExplorerController
 
   async function syncLoadedFoldersOnce() {
     const rootPath = options.getCurrentFolderPath();
-    if (!options.getDesktopEnabled() || !rootPath) {
+    const requestGeneration = generation;
+    if (!options.getDesktopEnabled() || !rootPath || disposed || rootLoad) {
       return;
     }
 
     const knownPaths = [rootPath, ...collectTreePaths(options.getFolderTree())];
     const exists = await checkPathsExist(knownPaths).catch(() => knownPaths.map(() => true));
+    if (!isCurrent(requestGeneration, rootPath)) return;
     const missingPaths = knownPaths.filter((_path, index) => !exists[index]);
 
     if (missingPaths.some((path) => samePath(path, rootPath))) {
@@ -127,6 +184,7 @@ export function createFolderExplorerController(options: FolderExplorerController
 
     for (const folderPath of foldersToReload) {
       const result = await loadFolderChildren(folderPath, rootPath);
+      if (!isCurrent(requestGeneration, rootPath)) return;
       if ('error' in result) {
         if (samePath(folderPath, rootPath)) {
           clearMissingRoot(rootPath);
@@ -176,6 +234,7 @@ export function createFolderExplorerController(options: FolderExplorerController
   }
 
   function clearMissingRoot(rootPath: string) {
+    generation += 1;
     options.setCurrentFolderPath('');
     options.setRootFolderExpanded(true);
     options.setExpandedFolders(new Set());
@@ -185,10 +244,12 @@ export function createFolderExplorerController(options: FolderExplorerController
 
   async function loadFolderChildrenIntoTree(folderPath: string) {
     const rootPath = options.getCurrentFolderPath();
-    if (!rootPath) return;
+    const requestGeneration = generation;
+    if (!rootPath || disposed) return;
 
     options.setFolderTree(markFolderLoading(options.getFolderTree(), folderPath, true));
     const result = await loadFolderChildren(folderPath, rootPath);
+    if (!isCurrent(requestGeneration, rootPath)) return;
 
     if ('error' in result) {
       options.setFolderTree(markFolderLoading(options.getFolderTree(), folderPath, false));
@@ -200,8 +261,10 @@ export function createFolderExplorerController(options: FolderExplorerController
   }
 
   async function loadAncestorFolders(filePath: string, rootPath: string) {
+    const requestGeneration = generation;
     const ancestors = getAncestorFolderPaths(filePath, rootPath);
     for (const folderPath of ancestors) {
+      if (!isCurrent(requestGeneration, rootPath)) return;
       const node = findTreeNode(options.getFolderTree(), folderPath);
       if (node?.is_dir && !node.children_loaded && !node.loading) {
         await loadFolderChildrenIntoTree(folderPath);
@@ -224,6 +287,11 @@ export function createFolderExplorerController(options: FolderExplorerController
   }
 
   return {
+    revealFile,
+    dispose() {
+      disposed = true;
+      generation += 1;
+    },
     expandAncestors,
     toggleFolderCollapse,
     toggleRootFolder,
@@ -254,7 +322,7 @@ function getLoadedFolderPathsForRefresh(
 function getAncestorFolderPaths(filePath: string, rootPath: string) {
   const normalizedFile = normalizePath(filePath);
   const normalizedRoot = normalizePath(rootPath);
-  if (!normalizedFile.startsWith(normalizedRoot)) {
+  if (!pathEqualsOrDescendsFrom(filePath, rootPath)) {
     return [];
   }
 

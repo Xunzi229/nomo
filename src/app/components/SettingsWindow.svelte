@@ -2403,6 +2403,20 @@
                 </div>
               </div>
 
+              <label class="toggle-row" for="autoOpenFileDirectory">
+                <span>
+                  <span class="toggle-title">{t.autoOpenFileDirectory()}</span>
+                  <span class="toggle-desc">{t.autoOpenFileDirectoryDescription()}</span>
+                </span>
+                <input
+                  id="autoOpenFileDirectory"
+                  type="checkbox"
+                  checked={draftSettings.autoOpenFileDirectory}
+                  on:change={(event) => toggleSetting('autoOpenFileDirectory', event)}
+                />
+                <span class="toggle-switch" aria-hidden="true"></span>
+              </label>
+
               <label class="toggle-row" for="filePreviewEnabled">
                 <span>
                   <span class="toggle-title">{t.filePreviewTab()}</span>

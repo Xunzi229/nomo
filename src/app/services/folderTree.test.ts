@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { FileTreeNode } from '../types';
 import {
   canExpandFolderNode,
+  expandAncestors,
   collectTreePaths,
   pruneExpandedFolders,
   removeTreePaths,
@@ -157,5 +158,16 @@ describe('canExpandFolderNode', () => {
     expect(
       Array.from(pruneExpandedFolders(expandedFolders, ['D:\\Demo\\Workspace\\docs'])),
     ).toEqual(['D:\\Demo\\Workspace\\assets']);
+  });
+});
+
+describe('expandAncestors', () => {
+  it('does not expand sibling paths that share a root name prefix', () => {
+    expect([...expandAncestors(new Set(), '/notes-other/project/readme.md', '/notes')]).toEqual([]);
+  });
+  it('compares directory ancestry with consistent case and Unicode normalization', () => {
+    expect([...expandAncestors(new Set(), '/NOTES/cafe\u0301/readme.md', '/notes')]).toEqual([
+      '/notes/café',
+    ]);
   });
 });

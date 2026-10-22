@@ -34,6 +34,18 @@ beforeEach(() => {
 });
 
 describe('settings', () => {
+  it('默认自动显示文件目录，保留关闭选择并持久化', async () => {
+    expect(normalizeAppPreferences({}).autoOpenFileDirectory).toBe(true);
+    expect(normalizeAppPreferences({ autoOpenFileDirectory: 'false' as never }).autoOpenFileDirectory).toBe(true);
+    const preferences = await loadAppPreferences(true, [
+      createSetting('appearanceThemeModelV1', true),
+      createSetting('autoOpenFileDirectory', false),
+    ]);
+    expect(preferences.autoOpenFileDirectory).toBe(false);
+    await saveAppPreferences(true, preferences, ['autoOpenFileDirectory']);
+    expect(storageMock.updateAppSettings).toHaveBeenCalledWith({ autoOpenFileDirectory: false });
+  });
+
   it('uses one typography switch and ignores retired secondary preferences', () => {
     const previous = getTypographyOptions();
     const legacyPreferences = {

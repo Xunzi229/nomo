@@ -130,6 +130,8 @@ export const JA_JP_EXTRA_TRANSLATIONS = {
   askEveryTime: '毎回尋ねる',
   currentWindow: '現在のウィンドウ',
   newWindow: '新しいウィンドウ',
+  autoOpenFileDirectory: 'ファイルを開くときに所在フォルダーを自動表示',
+  autoOpenFileDirectoryDescription: 'Markdown ファイルの所在フォルダーを表示します。現在のツリーに含まれている場合は、そのツリーを使います。',
   filePreviewTab: '「ファイルプレビュー」タブ',
   filePreviewTabDescription:
     '新しいファイルをシングルクリックするとプレビュータブで開きます。別のファイルを開くか、編集またはダブルクリックすると固定されます。',

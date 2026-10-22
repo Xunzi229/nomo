@@ -101,6 +101,7 @@ export interface AppPreferences {
   largeDocumentLimit: number;
   openDefaultBehavior: OpenDefaultBehavior;
   filePreviewEnabled: boolean;
+  autoOpenFileDirectory: boolean;
   closeWindowBehavior: CloseWindowBehavior;
   externalFileChangeBehavior: ExternalFileChangeBehavior;
   sidebarHidden: boolean;
@@ -186,6 +187,7 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   largeDocumentLimit: 500_000,
   openDefaultBehavior: 'ask-every-time',
   filePreviewEnabled: true,
+  autoOpenFileDirectory: true,
   closeWindowBehavior: 'ask-every-time',
   externalFileChangeBehavior: 'reload-external',
   sidebarHidden: false,
@@ -311,6 +313,7 @@ export async function loadAppPreferences(
       parseSetting<unknown>(settings, 'openDefaultBehavior') ??
       parseSetting<unknown>(settings, 'folderOpenDefaultBehavior'),
     filePreviewEnabled: parseSetting<unknown>(settings, 'filePreviewEnabled'),
+    autoOpenFileDirectory: parseSetting<unknown>(settings, 'autoOpenFileDirectory'),
     closeWindowBehavior:
       parseSetting<unknown>(settings, 'closeWindowBehavior') ??
       resolveLegacyCloseWindowBehavior(settings),
@@ -451,6 +454,10 @@ export function normalizeAppPreferences(
       typeof value.filePreviewEnabled === 'boolean'
         ? value.filePreviewEnabled
         : DEFAULT_APP_PREFERENCES.filePreviewEnabled,
+    autoOpenFileDirectory:
+      typeof value.autoOpenFileDirectory === 'boolean'
+        ? value.autoOpenFileDirectory
+        : DEFAULT_APP_PREFERENCES.autoOpenFileDirectory,
     closeWindowBehavior: isCloseWindowBehavior(value.closeWindowBehavior)
       ? value.closeWindowBehavior
       : DEFAULT_APP_PREFERENCES.closeWindowBehavior,
@@ -667,6 +674,7 @@ function toPersistedPreferenceEntries(
     largeDocumentLimit: preferences.largeDocumentLimit,
     openDefaultBehavior: preferences.openDefaultBehavior,
     filePreviewEnabled: preferences.filePreviewEnabled,
+    autoOpenFileDirectory: preferences.autoOpenFileDirectory,
     closeWindowBehavior: preferences.closeWindowBehavior,
     externalFileChangeBehavior: preferences.externalFileChangeBehavior,
     sidebarHidden: preferences.sidebarHidden,

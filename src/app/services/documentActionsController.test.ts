@@ -147,8 +147,7 @@ function createOptions(initialTabs: Tab[]) {
       switchTab: vi.fn(),
       writeRecoveryDraft: vi.fn(),
       updateWindowTitle: vi.fn(),
-      loadFolder: vi.fn().mockResolvedValue(undefined),
-      expandAncestors: vi.fn(),
+      revealDocumentInExplorer: vi.fn().mockResolvedValue(undefined),
     },
     getState: () => ({
       tabs,
@@ -227,6 +226,7 @@ describe('documentActionsController', () => {
     expect(getState().tabs[0]).toEqual(before);
     expect(getState().tabs[0].dirty).toBe(true);
     expect(getState().tabs[1].nativePath).toBe(document.path);
+    expect(options.revealDocumentInExplorer).toHaveBeenCalledWith(document.path);
     expect(getState().activeTabId).toBe(getState().tabs[1].id);
     await controller.applyNativeDocument(document, 'opened again');
     expect(getState().tabs).toHaveLength(2);

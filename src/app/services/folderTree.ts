@@ -1,4 +1,5 @@
 import type { FileTreeNode } from '../types';
+import { pathEqualsOrDescendsFrom } from '../utils/pathLabels';
 
 export function expandAncestors(expandedFolders: Set<string>, filePath: string, rootPath: string) {
   const nextExpandedFolders = new Set(expandedFolders);
@@ -11,7 +12,7 @@ export function expandAncestors(expandedFolders: Set<string>, filePath: string, 
   // 统一规范化为 NFC 防止路径比较失败导致展开状态丢失
   const normalizedFile = normalizePath(filePath);
   const normalizedRoot = normalizePath(rootPath);
-  if (!normalizedFile.startsWith(normalizedRoot)) {
+  if (!pathEqualsOrDescendsFrom(filePath, rootPath)) {
     return nextExpandedFolders;
   }
 
