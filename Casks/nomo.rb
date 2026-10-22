@@ -1,6 +1,6 @@
 cask "nomo" do
-  version "0.6.3"
-  sha256 "3b9c7baac3cb17053f4f4973e64950bac4f4fd7b5dd071e81712f140f010749f"
+  version "0.6.4"
+  sha256 "2e7775cf5914fba7a0dd670821d870d42f5c5983d57fff3f5152e6d7a26af41e"
 
   url "https://github.com/Xunzi229/nomo/releases/download/v#{version}/Nomo_#{version}_aarch64.dmg"
   name "Nomo"
