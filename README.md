@@ -114,3 +114,5 @@ bash scripts/build-linux.sh
 采用 [AGPL-3.0-or-later](./LICENSE) 许可证；商业授权请联系维护者，第三方组件遵循各自许可证。
 
 感谢 Tauri、Svelte、ProseMirror、CodeMirror、markdown-it、Shiki、KaTeX、Mermaid 等开源项目。
+
+原始项目来源：[nomo-md/nomo](https://github.com/nomo-md/nomo)，本仓库基于该项目持续维护。
